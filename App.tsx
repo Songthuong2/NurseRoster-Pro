@@ -128,6 +128,17 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [shifts, staffList, notifSettings]);
 
+  const handleClearLogs = () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử thông báo tự động?')) {
+      setNotificationLogs([]);
+    }
+  };
+
+  const handleDeleteManualNotif = (id: string) => {
+    if (window.confirm('Bạn có chắc chắn muốn xoá thông báo này?')) {
+      setManualNotifications(prev => prev.filter(n => n.id !== id));
+    }
+  };
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -269,6 +280,8 @@ const App: React.FC = () => {
               currentUser={currentUser}
               adminPassword={adminPassword}
               setAdminPassword={setAdminPassword}
+              onClearLogs={handleClearLogs}
+              onDeleteManualNotification={handleDeleteManualNotif}
             />
           )}
         </main>

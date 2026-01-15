@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ManualNotification, NotificationLog, Staff, User } from '../types';
-import { Bell, CheckCircle, Clock, Send, Lock, Shield, Eye, EyeOff } from 'lucide-react';
+import { Bell, CheckCircle, Clock, Send, Lock, Shield, Eye, EyeOff, Trash2, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Button } from './ui/Button';
 
@@ -14,6 +14,8 @@ interface NotificationPanelProps {
   currentUser?: User;
   adminPassword?: string;
   setAdminPassword?: (pwd: string) => void;
+  onClearLogs?: () => void;
+  onDeleteManualNotification?: (id: string) => void;
 }
 
 export const NotificationPanel: React.FC<NotificationPanelProps> = ({ 
@@ -25,7 +27,9 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   setManualNotifications,
   currentUser,
   adminPassword,
-  setAdminPassword
+  setAdminPassword,
+  onClearLogs,
+  onDeleteManualNotification
 }) => {
   const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'security'>('auto');
   
@@ -197,10 +201,23 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
             </div>
 
             <div className="p-6">
-               <h3 className="text-sm font-bold text-slate-700 uppercase mb-4 flex items-center justify-between">
-                 Lịch sử thông báo tự động
-                 <span className="text-xs bg-slate-100 text-slate-500 py-1 px-2 rounded-full normal-case font-normal">{logs.length} tin nhắn</span>
-               </h3>
+               <div className="flex items-center justify-between mb-4">
+                 <h3 className="text-sm font-bold text-slate-700 uppercase flex items-center">
+                   Lịch sử thông báo tự động
+                   <span className="ml-2 text-xs bg-slate-100 text-slate-500 py-1 px-2 rounded-full normal-case font-normal">{logs.length} tin nhắn</span>
+                 </h3>
+                 {logs.length > 0 && onClearLogs && (
+                   <button 
+                     type="button"
+                     onClick={onClearLogs}
+                     className="flex items-center text-xs text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md transition-colors"
+                     title="Xóa toàn bộ lịch sử thông báo"
+                   >
+                     <Trash2 size={12} className="mr-1.5" />
+                     Xóa lịch sử
+                   </button>
+                 )}
+               </div>
                
                {logs.length === 0 ? (
                  <div className="text-center py-10 text-slate-400 italic">Chưa có thông báo nào được gửi.</div>
@@ -229,7 +246,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
 
         {/* TAB 2: MANUAL NOTIFICATIONS (ADMIN ONLY) */}
         {activeTab === 'manual' && currentUser?.role === 'admin' && (
-          <div className="p-6">
+          <div className="p-6 space-y-8">
             <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
               <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
                 <Send className="mr-2 text-medical-600" size={20} /> Gửi thông báo mới
@@ -274,6 +291,43 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                    <Button type="submit" icon={<Send size={16} />}>Gửi thông báo</Button>
                 </div>
               </form>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+               <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                  Danh sách thông báo đã gửi ({manualNotifications.length})
+               </h3>
+               {manualNotifications.length === 0 ? (
+                  <div className="text-center text-slate-400 italic py-4">Chưa có thông báo thủ công nào.</div>
+               ) : (
+                  <div className="space-y-3">
+                     {manualNotifications.slice().reverse().map(notif => (
+                        <div key={notif.id} className="border border-slate-100 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                           <div className="flex justify-between items-start mb-2">
+                              <div>
+                                 <h4 className="font-bold text-slate-800 text-sm">{notif.title}</h4>
+                                 <div className="flex gap-2 text-xs text-slate-500 mt-1">
+                                    <span>Gửi tới: {notif.recipientId === 'all' ? 'Tất cả' : staffList.find(s => s.id === notif.recipientId)?.name || 'Unknown'}</span>
+                                    <span>•</span>
+                                    <span>{format(parseISO(notif.createdAt), 'HH:mm dd/MM/yyyy')}</span>
+                                 </div>
+                              </div>
+                              {onDeleteManualNotification && (
+                                <button 
+                                  type="button"
+                                  onClick={() => onDeleteManualNotification(notif.id)}
+                                  className="text-slate-400 hover:text-red-600 transition-colors"
+                                  title="Xóa thông báo này"
+                                >
+                                   <X size={16} />
+                                </button>
+                              )}
+                           </div>
+                           <p className="text-sm text-slate-600 bg-slate-50 p-2 rounded">{notif.content}</p>
+                        </div>
+                     ))}
+                  </div>
+               )}
             </div>
           </div>
         )}
